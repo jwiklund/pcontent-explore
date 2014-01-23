@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/github.css" rel="stylesheet">
 <style>
 #login, #explore, #explorefound {
   display: none;
@@ -36,20 +37,18 @@
     </div>
   </div>
   </form>
-  <pre id="exploreresult">
-  </pre>
+  <div id="exploreresult">
+  </div>
 </div>
 
 </div>
 
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.0/jquery.cookie.min.js"></script>
 
-
-<!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="js/bootstrap.min.js"></script>
 <script src="js/explore.js"></script>
+<script src="js/highlight.pack.js"></script>
 <script>
 explore(window, $);
 </script>

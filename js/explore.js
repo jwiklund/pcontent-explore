@@ -13,8 +13,9 @@ var explore = function(window, $) {
       if (validForId != id) {
         return;
       }
-      $('#exploreresult').text(JSON.stringify(data, null, "  "));
       $('#explorefound').css('display', 'block');
+      $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+      $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
     }
     function expandResult(validForId, dataType, topData, currentData, resultKey, newData) {
       if (validForId != id) {
