@@ -17,7 +17,7 @@ var explore = function(window, $) {
       $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
       $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
     }
-    function expandResult(validForId, dataType, topData, currentData, resultKey, newData) {
+    function expandResult(validForId, dataType, topData, currentData, resultKey, count, newData) {
       if (validForId != id) {
         return;
       }
@@ -27,33 +27,60 @@ var explore = function(window, $) {
         topData = newData;
       }
       if (dataType == 'HangerId') {
-        $.ajax(base + 'HangerVersion::' + newData.key, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + newData.key + ' (HangerVersion)'),
-          error: expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key)
+        var get = 'HangerVersion::' + newData.key;
+        $.ajax(base + get, $.extend({}, settings, {
+          success: expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + get, count),
+          error: expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key, count)
         }));
       } else if (dataType == 'HangerVersion') {
-        $.ajax(base + 'Hanger::' + newData.contentId.key + "::" + newData.version, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + newData.version + ' (Hanger)'),
-          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version)
+        var get = 'Hanger::' + newData.contentId.key + "::" + newData.version;
+        $.ajax(base + get, $.extend({}, settings, {
+          success: expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + get, count),
+          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count)
         }));
       } else if (dataType == 'Hanger') {
-        // TODO expand all aspects
-        finalResult(validForId, topData);
+        var aspects = { count: 0 };
+        for (var i in newData.aspectLocations) {
+          aspects.count = aspects.count + 1;
+        }
+        for (var i in newData.aspectLocations) {
+          var aspect = newData.aspectLocations[i];
+          var get = 'AspectVersion::' + aspect.key;
+          $.ajax(base + get, $.extend({}, settings, {
+            success: expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + get, count),
+            error: expandError(expandError, validForId, topData, aspect, 'key :  ' + aspect.key, count)
+          }))
+        }
       } else if (dataType == 'AspectVersion') {
-        $.ajax(base + 'Aspect::' + newData.contentId.key + '::' + newData.version, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version :  ' + newData.version + ' (Aspect'),
-          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version)
+        var get = 'Aspect::' + newData.contentId.key + '::' + newData.version;
+        $.ajax(base + get, $.extend({}, settings, {
+          success: expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + get, count),
+          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count)
         }));
       } else {
-        finalResult(validForId, topData);
+        if (count) {
+          count.count = count.count - 1;
+          if (count.count == 0) {
+            finalResult(validForId, topData);
+          }
+        } else {
+          finalResult(validForId, topData);
+        }
       }
     }
-    function expandError(validForId, topData, currentData, resultKey, jqXHR, textStatus) {
+    function expandError(validForId, topData, currentData, resultKey, count, jqXHR, textStatus) {
       if (validForId != id) {
         return;
       }
       currentData[resultKey] = 'not found';
-      finalResult(validForId, topData);
+      if (count) {
+        count.count = count.count - 1;
+        if (count.count == 0) {
+          finalResult(validForId, topData);
+        }
+      } else {
+        finalResult(validForId, topData);
+      }
     }
     function typeFromId(id) {
       if (id.indexOf('::') == -1) {
@@ -63,19 +90,19 @@ var explore = function(window, $) {
     }
     function updateSearch(searchFor) {
       $.ajax(base + searchFor, $.extend({}, settings, {
-        success: expandResult.bind(expandResult, searchFor, typeFromId(searchFor), null, null, null),
+        success: expandResult.bind(expandResult, searchFor, typeFromId(searchFor), null, null, null, null),
         error: function(jqXHR) {
           if (searchFor == id) {
             $.ajax(base + 'HangerId::' + searchFor, $.extend({}, settings, {
-              success: expandResult.bind(expandResult, searchFor, 'HangerId', null, null, null),
+              success: expandResult.bind(expandResult, searchFor, 'HangerId', null, null, null, null),
               error: function(jqXHR) {
                 if (searchFor == id) {
                   $.ajax(base + 'HangerVersion::' + searchFor, $.extend({}, settings, {
-                    success: expandResult.bind(expandResult, searchFor, 'HangerVersion', null, null, null),
+                    success: expandResult.bind(expandResult, searchFor, 'HangerVersion', null, null, null, null),
                     error: function(jqXHR) {
                       if (searchFor == id) {
                         $.ajax(base + 'AspectVersion::' + searchFor, $.extend({}, settings, {
-                          success: expandResult.bind(expandResult, searchFor, 'AspectVersion', null, null, null),
+                          success: expandResult.bind(expandResult, searchFor, 'AspectVersion', null, null, null, null),
                           error: function(jqXHR) {
                             if (searchFor == id) {
                               $('#explorefound').css('display', 'none');
