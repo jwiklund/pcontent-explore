@@ -21,6 +21,7 @@ var explore = function(window, $) {
       if (validForId != id) {
         return;
       }
+      newData = $.extend({}, {'_InternalPrefixType': dataType}, newData);
       if (resultKey) {
         currentData[resultKey] = newData;
       } else {
