@@ -8,6 +8,24 @@ var explore = function(window, $) {
       $('#exploreid').change();
       e.preventDefault();
     });
+    $('.createview').on('click', function(e) {
+      var doc = {
+        'views': {
+          'ids': {
+            'map': 'function (doc, meta) { emit(meta.id.toLowerCase(), null); }'
+          }
+        }
+      };
+      $.ajax(base + '_design/ids', $.extend({}, {method: 'PUT', data: JSON.stringify(doc), contentType: 'application/json' }, settings))
+        .done(function() {
+          $('#explorelist').css('display', 'none');
+        })
+        .fail(function() {
+          console.log('Create ids view failed');
+        });
+      e.preventDefault();
+    });
+
     var id = '', settings = {
       cache: false,
       dataType: 'json',
