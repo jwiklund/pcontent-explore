@@ -3,6 +3,11 @@ var explore = function(window, $) {
   function initExplore(details) {
     $('#login').css('display', 'none');
     $('#explore').css('display', 'block');
+    $('#exploreresult').on('click', '.link', function(e) {
+      $('#exploreid').val($(e.target).text());
+      $('#exploreid').change();
+      e.preventDefault();
+    });
     var id = '', settings = {
       cache: false,
       dataType: 'json',
@@ -86,29 +91,63 @@ var explore = function(window, $) {
       return id.substring(0, id.indexOf('::'));
     }
     function updateSearch(searchFor) {
-      function search(type, first, types) {
+      function listids(searchFor, types) {
         if (searchFor != id) {
           return;
         }
+        $('#explorefound').css('display', 'none');
+
+        var type = types[0];
+        var left = types.splice(1);
+        var theId = searchFor.toLowerCase();
+        if (type != '') {
+          theId = type.toLowerCase() + '::' + theId;
+        }
+        $.ajax(base + '_design/ids/_view/ids?limit=20&startkey="' + theId + '"', settings)
+          .done(function(data) {
+            if (searchFor != id) {
+              return;
+            }
+            var found = data.rows.filter(function (r) {
+              return r.key.substring(0, theId.length) == theId;
+            });
+            if (found.length == 1) {
+              $('#exploreid').val(found[0].id);
+              $('#exploreid').change();
+            } else if (found.length > 0) {
+              $('#exploreresult').css('display', 'block');
+              $('#exploreresult').html('<ul>' + found.map(function(e) { return '<li><a href="#" class="link">' + e.id + '</a></li>'; }).join('\n') + '</ul>');
+            } else {
+              if (left.length > 0) {
+                listids(searchFor, left);
+              }
+            }
+          })
+          .fail(function() {
+            $('#explorelist').css('display', 'block');
+          });
+      }
+      function search(types) {
+        if (searchFor != id) {
+          return;
+        }
+        var type = types[0];
+        var left = types.splice(1);
         var theId = searchFor;
-        if (!first) {
+        if (type == '') {
+          type = typeFromId(theId);
+        } else {
           theId = type + '::' + theId;
         }
         var jqXHR = $.ajax(base + theId, settings)
           .done(expandResult.bind(expandResult, searchFor, type, null, null, null, null))
-        if (types.length > 0) {
-          var next = types[0];
-          var left = types.splice(1);
-          jqXHR.fail(search.bind(search, next, false, left));
+        if (left.length > 0) {
+          jqXHR.fail(search.bind(search, left));
         } else {
-          jqXHR.fail(function() {
-            if (searchFor == id) {
-              $('#explorefound').css('display', 'none');
-            }
-          });
+          jqXHR.fail(listids.bind(listids, searchFor, ['', 'HangerId', 'HangerVersion', 'AspectVersion']));
         }
       }
-      search(typeFromId(searchFor), true, ['HangerId', 'HangerVersion', 'AspectVersion']);
+      search(['', 'HangerId', 'HangerVersion', 'AspectVersion']);
     }
     function changeDetect() {
       var nid = idelement.val();
