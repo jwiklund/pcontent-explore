@@ -8,7 +8,7 @@ var explore = function(window, $) {
       dataType: 'json',
       username: details.user,
       password: details.pass
-    }
+    };
     function finalResult(validForId, data) {
       if (validForId != id) {
         return;
@@ -28,16 +28,14 @@ var explore = function(window, $) {
       }
       if (dataType == 'HangerId') {
         var get = 'HangerVersion::' + newData.key;
-        $.ajax(base + get, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + get, count),
-          error: expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key, count)
-        }));
+        $.ajax(base + get, settings)
+          .done(expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + get, count))
+          .fail(expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key, count));
       } else if (dataType == 'HangerVersion') {
         var get = 'Hanger::' + newData.contentId.key + "::" + newData.version;
-        $.ajax(base + get, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + get, count),
-          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count)
-        }));
+        $.ajax(base + get, settings)
+          .done(expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + get, count))
+          .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else if (dataType == 'Hanger') {
         var aspects = { count: 0 };
         for (var i in newData.aspectLocations) {
@@ -46,17 +44,15 @@ var explore = function(window, $) {
         for (var i in newData.aspectLocations) {
           var aspect = newData.aspectLocations[i];
           var get = 'AspectVersion::' + aspect.key;
-          $.ajax(base + get, $.extend({}, settings, {
-            success: expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + get, count),
-            error: expandError(expandError, validForId, topData, aspect, 'key :  ' + aspect.key, count)
-          }))
+          $.ajax(base + get, settings)
+            .done(expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + get, count))
+            .fail(expandError.bind(expandError, validForId, topData, aspect, 'key :  ' + aspect.key, count));
         }
       } else if (dataType == 'AspectVersion') {
         var get = 'Aspect::' + newData.contentId.key + '::' + newData.version;
-        $.ajax(base + get, $.extend({}, settings, {
-          success: expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + get, count),
-          error: expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count)
-        }));
+        $.ajax(base + get, settings)
+          .done(expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + get, count))
+          .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else {
         if (count) {
           count.count = count.count - 1;
@@ -89,35 +85,29 @@ var explore = function(window, $) {
       return id.substring(0, id.indexOf('::'));
     }
     function updateSearch(searchFor) {
-      $.ajax(base + searchFor, $.extend({}, settings, {
-        success: expandResult.bind(expandResult, searchFor, typeFromId(searchFor), null, null, null, null),
-        error: function(jqXHR) {
-          if (searchFor == id) {
-            $.ajax(base + 'HangerId::' + searchFor, $.extend({}, settings, {
-              success: expandResult.bind(expandResult, searchFor, 'HangerId', null, null, null, null),
-              error: function(jqXHR) {
-                if (searchFor == id) {
-                  $.ajax(base + 'HangerVersion::' + searchFor, $.extend({}, settings, {
-                    success: expandResult.bind(expandResult, searchFor, 'HangerVersion', null, null, null, null),
-                    error: function(jqXHR) {
-                      if (searchFor == id) {
-                        $.ajax(base + 'AspectVersion::' + searchFor, $.extend({}, settings, {
-                          success: expandResult.bind(expandResult, searchFor, 'AspectVersion', null, null, null, null),
-                          error: function(jqXHR) {
-                            if (searchFor == id) {
-                              $('#explorefound').css('display', 'none');
-                            }
-                          }
-                        }));
-                      }
-                    }
-                  }));
-                }            
-              }
-            }));
-          }
+      function search(type, first, types) {
+        if (searchFor != id) {
+          return;
         }
-      }));
+        var theId = searchFor;
+        if (!first) {
+          theId = type + '::' + theId;
+        }
+        var jqXHR = $.ajax(base + theId, settings)
+          .done(expandResult.bind(expandResult, searchFor, type, null, null, null, null))
+        if (types.length > 0) {
+          var next = types[0];
+          var left = types.splice(1);
+          jqXHR.fail(search.bind(search, next, false, left));
+        } else {
+          jqXHR.fail(function() {
+            if (searchFor == id) {
+              $('#explorefound').css('display', 'none');
+            }
+          });
+        }
+      }
+      search(typeFromId(searchFor), true, ['HangerId', 'HangerVersion', 'AspectVersion']);
     }
     function changeDetect() {
       var nid = idelement.val();
@@ -134,18 +124,21 @@ var explore = function(window, $) {
     });
   }
   function ping(details, success) {
-    $.ajax(base + 'doesnotexist', $.extend({}, settings, {
-      success: function(data) {
+    $.ajax(base + 'doesnotexist', {
+      cache: false,
+      dataType: 'json',
+      username: details.user,
+      password: details.pass
+    }).done(function(data) {
         $.cookie('explore.cookie', btoa(JSON.stringify(details)));
         initExplore(details);
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
+      })
+      .fail(function(jqXHR, textStatus, errorThrown) {
         if (jqXHR.status == 404) {
           $.cookie('explore.cookie', btoa(JSON.stringify(details)));
           initExplore(details);
         }
-      }
-    }));
+      });
   }
 
   var details = $.cookie("explore.cookie");
