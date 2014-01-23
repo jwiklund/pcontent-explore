@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<title>PContentApi Explorer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<style>
+#login, #explore, #explorefound {
+  display: none;
+}
+#login {
+  max-width: 600px;
+}
+</style>
+
+<div class="container">
+
+<h1>PContentApi Explorer</h1>
+
+<div id="login">
+  <form class="form-signin" role="form">
+    <input type="text" class="form-control" id="user" placeholder="Username" required autofocus>
+    <input type="password" class="form-control" id="pass" placeholder="Password" required>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+  </form>
+</div>
+<div id="explore">
+  <form class="form-horizontal" role="form">
+    <div class="form-group">
+      <label for="exploreid" class="col-sm-1 control-label">Key</label>
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="exploreid" placeholder="Explore Id" required autofocus>
+      </div>
+      <div class="col-sm-1">
+        <span id="explorefound" class="glyphicon glyphicon-ok"></span>
+      </div>
+    </div>
+  </div>
+  </form>
+  <pre id="exploreresult">
+  </pre>
+</div>
+
+</div>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.0/jquery.cookie.min.js"></script>
+
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+<script src="js/explore.js"></script>
+<script>
+explore(window, $);
+</script>
