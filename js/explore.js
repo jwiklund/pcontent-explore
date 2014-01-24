@@ -40,11 +40,11 @@ var explore = function(window, $) {
       $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
       $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
     }
-    function expandResult(validForId, dataType, topData, currentData, resultKey, count, newData) {
+    function expandResult(validForId, dataType, topData, currentData, resultKey, resultId, count, newData) {
       if (validForId != id) {
         return;
       }
-      newData = $.extend({}, {'_InternalPrefixType': dataType}, newData);
+      newData = $.extend({}, {'_InternalId': resultId}, newData);
       if (resultKey) {
         currentData[resultKey] = newData;
       } else {
@@ -53,12 +53,12 @@ var explore = function(window, $) {
       if (dataType == 'HangerId') {
         var get = 'HangerVersion::' + newData.key;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + get, count))
+          .done(expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + newData.key, get, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key, count));
       } else if (dataType == 'HangerVersion') {
         var get = 'Hanger::' + newData.contentId.key + "::" + newData.version;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + get, count))
+          .done(expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + newData.version, get, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else if (dataType == 'Hanger') {
         var aspects = { count: 0 };
@@ -69,13 +69,13 @@ var explore = function(window, $) {
           var aspect = newData.aspectLocations[i];
           var get = 'AspectVersion::' + aspect.key;
           $.ajax(base + get, settings)
-            .done(expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + get, count))
+            .done(expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + aspect.key, get, count))
             .fail(expandError.bind(expandError, validForId, topData, aspect, 'key :  ' + aspect.key, count));
         }
       } else if (dataType == 'AspectVersion') {
         var get = 'Aspect::' + newData.contentId.key + '::' + newData.version;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + get, count))
+          .done(expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + newData.version, get, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else {
         if (count) {
@@ -158,7 +158,7 @@ var explore = function(window, $) {
           theId = type + '::' + theId;
         }
         var jqXHR = $.ajax(base + theId, settings)
-          .done(expandResult.bind(expandResult, searchFor, type, null, null, null, null))
+          .done(expandResult.bind(expandResult, searchFor, type, null, null, null, theId, null))
         if (left.length > 0) {
           jqXHR.fail(search.bind(search, left));
         } else {
