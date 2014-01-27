@@ -4,6 +4,9 @@ var explore = function(window, $) {
     $('#login').css('display', 'none');
     $('#explore').css('display', 'block');
     $('#exploreresult').on('click', '.link', function(e) {
+      if (e.ctrlKey) {
+        return;
+      }
       $('#exploreid').val($(e.target).text());
       $('#exploreid').change();
       e.preventDefault();
@@ -25,7 +28,6 @@ var explore = function(window, $) {
         });
       e.preventDefault();
     });
-
     var id = '', settings = {
       cache: false,
       dataType: 'json',
@@ -134,7 +136,7 @@ var explore = function(window, $) {
               $('#exploreid').change();
             } else if (found.length > 0) {
               $('#exploreresult').css('display', 'block');
-              $('#exploreresult').html('<ul>' + found.map(function(e) { return '<li><a href="#" class="link">' + e.id + '</a></li>'; }).join('\n') + '</ul>');
+              $('#exploreresult').html('<ul>' + found.map(function(e) { return '<li><a href="#key=' + e.id + '" class="link">' + e.id + '</a></li>'; }).join('\n') + '</ul>');
             } else {
               if (left.length > 0) {
                 listids(searchFor, left);
@@ -180,6 +182,20 @@ var explore = function(window, $) {
     $('#exploreid').keydown(function() {
       var now = $('#exploreid')
     });
+    // check for #key= argument
+    function hashKey() {
+      var hash = document.location.hash;
+      var ind = hash.indexOf('key=');
+      if (ind == -1) {
+        return '';
+      }
+      var end = hash.indexOf('=', ind + 4);
+      if (end == -1) {
+        end = hash.length - ind - 4
+      }
+      return hash.substring(ind + 4, end);
+    }
+    $('#exploreid').val(hashKey()).change();
   }
   function ping(details, success) {
     $.ajax(base + 'doesnotexist', {
