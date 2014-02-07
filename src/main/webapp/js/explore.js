@@ -119,12 +119,12 @@ var explore = function(window, $) {
         if (type != '') {
           theId = type.toLowerCase() + '::' + theId;
         }
-        $.ajax(base + '_design/ids/_view/ids?limit=20&startkey="' + theId + '"', settings)
+        $.ajax(base + 'search/ids?key' + theId, settings)
           .done(function(data) {
             if (searchFor != id) {
               return;
             }
-            var found = data.rows.filter(function (r) {
+            var found = data.filter(function (r) {
               return r.key.substring(0, theId.length) == theId;
             });
             if (found.length == 1) {

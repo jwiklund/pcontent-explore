@@ -58,7 +58,7 @@ public class Couchbase
             } else {
                 sb.append(",");
             }
-            sb.append('"').append(resp.getId()).append('"');
+            sb.append(String.format("{'key':'%s','id':'%s'}".replace('\'', '"'), resp.getKey(), resp.getId()));
         }
         sb.append("]");
         return sb.toString();
