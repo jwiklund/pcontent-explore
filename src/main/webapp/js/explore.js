@@ -1,8 +1,6 @@
 var explore = function(window, $) {
-  var base = '/couchbase/couchBase/cmbucket/';
-  function initExplore(details) {
-    $('#login').css('display', 'none');
-    $('#explore').css('display', 'block');
+  var base = 'cb/';
+  function initExplore() {
     $('#exploreresult').on('click', '.link', function(e) {
       if (e.ctrlKey) {
         return;
@@ -19,7 +17,7 @@ var explore = function(window, $) {
           }
         }
       };
-      $.ajax(base + '_design/ids', $.extend({}, {method: 'PUT', data: JSON.stringify(doc), contentType: 'application/json' }, settings))
+      $.ajax(base + '_design_slash_ids', $.extend({}, {method: 'PUT', data: JSON.stringify(doc), contentType: 'application/json' }, settings))
         .done(function() {
           $('#explorelist').css('display', 'none');
         })
@@ -30,9 +28,7 @@ var explore = function(window, $) {
     });
     var id = '', settings = {
       cache: false,
-      dataType: 'json',
-      username: details.user,
-      password: details.pass
+      dataType: 'json'
     };
     function finalResult(validForId, data) {
       if (validForId != id) {
@@ -197,36 +193,5 @@ var explore = function(window, $) {
     }
     $('#exploreid').val(hashKey()).change();
   }
-  function ping(details, success) {
-    $.ajax(base + 'doesnotexist', {
-      cache: false,
-      dataType: 'json',
-      username: details.user,
-      password: details.pass
-    }).done(function(data) {
-        $.cookie('explore.cookie', btoa(JSON.stringify(details)));
-        initExplore(details);
-      })
-      .fail(function(jqXHR, textStatus, errorThrown) {
-        if (jqXHR.status == 404) {
-          $.cookie('explore.cookie', btoa(JSON.stringify(details)));
-          initExplore(details);
-        }
-      });
-  }
-
-  var details = $.cookie("explore.cookie");
-  if (!details) {
-    $('#login').css('display', 'block');
-    $('#login button').click(function(event) {
-      event.preventDefault();
-      details = {
-        user: $('#user').val(),
-        pass: $('#pass').val()
-      }
-      ping(details, initExplore.bind(details));
-    });
-  } else {
-    initExplore(JSON.parse(atob(details)));
-  }
+  initExplore();
 }

@@ -16,6 +16,6 @@
   </servlet>
   <servlet-mapping>
     <servlet-name>couchbase</servlet-name>
-    <url-pattern>/couchbase/*</url-pattern>
+    <url-pattern>/cb/*</url-pattern>
   </servlet-mapping>
 </web-app>
