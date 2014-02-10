@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<title>PContent Api Explorer</title>
+<title>Data Api Explorer</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -16,11 +16,11 @@
 </style>
 
 <nav class="navbar navbar-default" role="navigation">
-  <span class="navbar-brand">PContent API Explorer</span>
+  <span class="navbar-brand">Data API Explorer</span>
   <div class="container">
     <ul class="nav navbar-nav">
-      <li class="active"><a href="/">PContent</a></li>
-      <li><a href="/data.html">DataAPI</a></li>
+      <li><a href="/">PContent</a></li>
+      <li class="active"><a href="/data.html">DataAPI</a></li>
     </ul>
   </div>
 </nav>
@@ -34,7 +34,10 @@
         <label for="exploreid" class="control-label">Key</label>
         <div id="explorefound" class="glyphicon glyphicon-ok"></div>
       </div>
-      <div class="col-sm-11">
+      <div class="col-sm-2">
+        <input type="text" class="form-control" id="explorevariant" placeholdeR="Variant">
+      </div>
+      <div class="col-sm-9">
         <input type="text" class="form-control" id="exploreid" placeholder="Explore Id" required autofocus>
       </div>
     </div>
@@ -43,9 +46,6 @@
   <div id="exploreresult">
   </div>
 </div>
-<div id="explorelist">
-  <p>Looks like the couchbase 'ids' view does not exist <a class='createview' href="#">create</a> it?</p>
-</div>
 
 </div>
 
@@ -53,8 +53,8 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.0/jquery.cookie.min.js"></script>
 
 <script src="js/bootstrap.min.js"></script>
-<script src="js/explore.js"></script>
+<script src="js/data.js"></script>
 <script src="js/highlight.pack.js"></script>
 <script>
-explore(window, $);
+data(window, $);
 </script>
