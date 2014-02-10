@@ -40,7 +40,7 @@ public class Couchbase
         } catch (InvalidViewException e) {
             throw new WebApplicationException(e, 404);
         }
-        Set<String> ids = new TreeSet<String>();
+        Set<String> ids = new TreeSet<>();
         for (String key : keys) {
             String findKey = key.toLowerCase();
             ViewResponse query = cb.query(view, new Query().setLimit(100).setRangeStart('"' + findKey + '"'));
@@ -82,7 +82,7 @@ public class Couchbase
     @Path("view")
     @Produces(MediaType.APPLICATION_JSON)
     public String put(@Context CouchbaseClientIF cb) {
-        List<ViewDesign> views = new ArrayList<ViewDesign>(1);
+        List<ViewDesign> views = new ArrayList<>(1);
         views.add(new ViewDesign("ids", "function (doc, meta) { emit(meta.id.toLowerCase(), null); }"));
         DesignDocument ids = new DesignDocument("ids", views, Collections.<SpatialViewDesign>emptyList());
         if (cb.createDesignDoc(ids)) {
