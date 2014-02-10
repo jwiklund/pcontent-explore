@@ -18,4 +18,17 @@
     <servlet-name>couchbase</servlet-name>
     <url-pattern>/cb/*</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <servlet-name>dataapi</servlet-name>
+    <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+    <init-param>
+      <param-name>com.sun.jersey.config.property.packages</param-name>
+      <param-value>pca.explore.dataapi</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>dataapi</servlet-name>
+    <url-pattern>/da/*</url-pattern>
+  </servlet-mapping>
 </web-app>
