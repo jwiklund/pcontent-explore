@@ -164,7 +164,7 @@ var explore = function(window, $) {
       }
       var end = hash.indexOf('=', ind + 4);
       if (end == -1) {
-        end = hash.length - ind - 4
+        end = hash.length;
       }
       return hash.substring(ind + 4, end);
     }
