@@ -21,11 +21,17 @@ public class Data {
     @Consumes(MediaType.APPLICATION_JSON)
     public String get(@Context WebResource dataapi, @PathParam("id") String id, @QueryParam("token") String token, @QueryParam("variant") String variant)
     {
-        WebResource response = dataapi.path("content/contentid/" + id).queryParam("format", "json+pretty");
-        if (variant != null) {
-            response = response.queryParam("variant", variant);
+        WebResource request;
+        if (id.matches("\\d+\\.\\d+(\\.\\d+)?")) {
+            request = dataapi.path("content/contentid/" + id);
+        } else {
+            request = dataapi.path("content/externalid/" + id);
         }
-        return response
+        request = request.queryParam("format", "json+pretty");
+        if (variant != null) {
+            request = request.queryParam("variant", variant);
+        }
+        return request
                 .header("X-Security-Token", token)
                 .get(ClientResponse.class)
                 .getEntity(String.class);
