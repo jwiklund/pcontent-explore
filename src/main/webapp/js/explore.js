@@ -10,14 +10,7 @@ var explore = function(window, $) {
       e.preventDefault();
     });
     $('.createview').on('click', function(e) {
-      var doc = {
-        'views': {
-          'ids': {
-            'map': 'function (doc, meta) { emit(meta.id.toLowerCase(), null); }'
-          }
-        }
-      };
-      $.ajax(base + '_design_slash_ids', $.extend({}, {method: 'PUT', data: JSON.stringify(doc), contentType: 'application/json' }, settings))
+      $.ajax(base + 'view', $.extend({}, {method: 'POST', data: '{"operation":"create"}', contentType: 'application/json' }, settings))
         .done(function() {
           $('#explorelist').css('display', 'none');
         })
@@ -37,12 +30,21 @@ var explore = function(window, $) {
       $('#explorefound').css('display', 'block');
       $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
       $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
+      var url = document.location.href;
+      if (url.indexOf('#') != -1) {
+        url = url.substring(0, url.indexOf('#'));
+      }
+      document.location = url + '#key=' + validForId;
     }
-    function expandResult(validForId, dataType, topData, currentData, resultKey, resultId, count, newData) {
+    function expandResult(validForId, dataType, topData, currentData, resultKey, count, resultData) {
       if (validForId != id) {
         return;
       }
-      newData = $.extend({}, {'_InternalId': resultId}, newData);
+      var newData = resultData.data;
+      if (dataType == null) {
+        dataType = typeFromId(resultData.id);
+      }
+      newData = $.extend({}, {'_InternalId': resultData.id}, newData);
       if (resultKey) {
         currentData[resultKey] = newData;
       } else {
@@ -51,12 +53,12 @@ var explore = function(window, $) {
       if (dataType == 'HangerId') {
         var get = 'HangerVersion::' + newData.key;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + newData.key, get, count))
+          .done(expandResult.bind(expandResult, validForId, 'HangerVersion', topData, newData, 'key :  ' + newData.key, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'key-' + newData.key, count));
       } else if (dataType == 'HangerVersion') {
         var get = 'Hanger::' + newData.contentId.key + "::" + newData.version;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + newData.version, get, count))
+          .done(expandResult.bind(expandResult, validForId, 'Hanger', topData, newData, 'version :  ' + newData.version, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else if (dataType == 'Hanger') {
         var aspects = { count: 0 };
@@ -67,13 +69,13 @@ var explore = function(window, $) {
           var aspect = newData.aspectLocations[i];
           var get = 'AspectVersion::' + aspect.key;
           $.ajax(base + get, settings)
-            .done(expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + aspect.key, get, count))
+            .done(expandResult.bind(expandResult, validForId, 'AspectVersion', topData, aspect, 'key :  ' + aspect.key, count))
             .fail(expandError.bind(expandError, validForId, topData, aspect, 'key :  ' + aspect.key, count));
         }
       } else if (dataType == 'AspectVersion') {
         var get = 'Aspect::' + newData.contentId.key + '::' + newData.version;
         $.ajax(base + get, settings)
-          .done(expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + newData.version, get, count))
+          .done(expandResult.bind(expandResult, validForId, 'Aspect', topData, newData, 'version : ' + newData.version, count))
           .fail(expandError.bind(expandError, validForId, topData, newData, 'version-' + newData.version, count));
       } else {
         if (count) {
@@ -100,6 +102,30 @@ var explore = function(window, $) {
         finalResult(validForId, topData);
       }
     }
+    function search(searchFor) {
+      if (searchFor != id) {
+        return;
+      }
+      $('#explorefound').css('display', 'none');
+      var searchUrl = base + 'search/ids?key=' + searchFor + '&key=HangerId::' + searchFor + '&key=HangerVersion' + searchFor + '&AspectVersion::' + searchFor;
+      $.ajax(searchUrl, settings)
+        .done(function(found) {
+          if (searchFor != id) {
+            return;
+          }
+          if (found.length == 1) {
+            $('#exploreid').val(found[0]);
+            $('#exploreid').change();
+          } else if (found.length > 0) {
+            $('#exploreresult').css('display', 'block');
+            $('#exploreresult').html('<ul>' + found.map(function(id) { return '<li><a href="#key=' + id + '" class="link">' + id + '</a></li>'; }).join('\n') + '</ul>');
+          }
+        })
+        .fail(function() {
+          $('#explorelist').css('display', 'block');
+        }
+      );
+    }
     function typeFromId(id) {
       if (id.indexOf('::') == -1) {
         return 'unknown';
@@ -107,63 +133,14 @@ var explore = function(window, $) {
       return id.substring(0, id.indexOf('::'));
     }
     function updateSearch(searchFor) {
-      function listids(searchFor, types) {
-        if (searchFor != id) {
-          return;
-        }
-        $('#explorefound').css('display', 'none');
-
-        var type = types[0];
-        var left = types.splice(1);
-        var theId = searchFor.toLowerCase();
-        if (type != '') {
-          theId = type.toLowerCase() + '::' + theId;
-        }
-        $.ajax(base + 'search/ids?key' + theId, settings)
-          .done(function(data) {
-            if (searchFor != id) {
-              return;
-            }
-            var found = data.filter(function (r) {
-              return r.key.substring(0, theId.length) == theId;
-            });
-            if (found.length == 1) {
-              $('#exploreid').val(found[0].id);
-              $('#exploreid').change();
-            } else if (found.length > 0) {
-              $('#exploreresult').css('display', 'block');
-              $('#exploreresult').html('<ul>' + found.map(function(e) { return '<li><a href="#key=' + e.id + '" class="link">' + e.id + '</a></li>'; }).join('\n') + '</ul>');
-            } else {
-              if (left.length > 0) {
-                listids(searchFor, left);
-              }
-            }
-          })
-          .fail(function() {
-            $('#explorelist').css('display', 'block');
-          });
+      if (searchFor != id) {
+        return;
       }
-      function search(types) {
-        if (searchFor != id) {
-          return;
-        }
-        var type = types[0];
-        var left = types.splice(1);
-        var theId = searchFor;
-        if (type == '') {
-          type = typeFromId(theId);
-        } else {
-          theId = type + '::' + theId;
-        }
-        var jqXHR = $.ajax(base + theId, settings)
-          .done(expandResult.bind(expandResult, searchFor, type, null, null, null, theId, null))
-        if (left.length > 0) {
-          jqXHR.fail(search.bind(search, left));
-        } else {
-          jqXHR.fail(listids.bind(listids, searchFor, ['', 'HangerId', 'HangerVersion', 'AspectVersion']));
-        }
-      }
-      search(['', 'HangerId', 'HangerVersion', 'AspectVersion']);
+      $('#explorefound').css('display', 'none');
+      var findUrl = base + searchFor;
+      $.ajax(findUrl, settings)
+        .done(expandResult.bind(expandResult, searchFor, null, null, null, null, null))
+        .fail(search.bind(search, searchFor));
     }
     function changeDetect() {
       var nid = idelement.val();
