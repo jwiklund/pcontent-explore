@@ -15,20 +15,25 @@ function data(window, $) {
     if (validForId != id || validForVariant != variant) {
       return;
     }
+    if (data.statusCode) {
+      $('#exploreerror').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+      $('#exploreerror pre code').each(function(i, e) { hljs.highlightBlock(e); });
+      $('#exploreerror').css('display', 'block');
+      return;
+    }
+    $('#exploreerror').css('display', 'none');
     $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
     $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
-    if (!data.statusCode) {
-      $('#explorefound').css('display', 'block');
-      var url = document.location.href;
-      if (url.indexOf('#') != -1) {
-        url = url.substring(0, url.indexOf('#'));
-      }
-      url = url + '#id=' + validForId;
-      if (variant) {
-        url = url + '&variant=' + validForVariant;
-      } 
-      document.location = url;
+    $('#explorefound').css('display', 'block');
+    var url = document.location.href;
+    if (url.indexOf('#') != -1) {
+      url = url.substring(0, url.indexOf('#'));
     }
+    url = url + '#id=' + validForId;
+    if (variant) {
+      url = url + '&variant=' + validForVariant;
+    }
+    document.location = url;
   }
   function updateSearch(validForId, validForVariant) {
     if (validForId != id || validForVariant != variant) {
