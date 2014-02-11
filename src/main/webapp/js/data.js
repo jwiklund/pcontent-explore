@@ -3,13 +3,34 @@ function data(window, $) {
     cache: false,
     dataType: 'json'
   };
-  $('#exploreresult').on('click', '.link', function(e) {
-    if (e.ctrlKey) {
-      return;
+  $('#exploreresult').on('click', 'pre', function(e) {
+    var pre = $('#exploreresult pre');
+    if (!pre.attr('contenteditable')) {
+      var text = pre.text();
+      var data = { contentData: JSON.parse(text).contentData };
+      $('#exploreresult').html('<pre contenteditable="true"><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+      $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
+      $('#explorefound').css('display', 'none');
+      $('#editsave').css('display', 'block');
     }
-    $('#exploreid').val($(e.target).text());
-    $('#exploreid').change();
-    e.preventDefault();
+  });
+
+  $('#editsave').on('click', function(e) {
+    var data = $('#exploreresult pre').text();
+    var url = base;
+    if (variant && id) {
+      url = url + '?variant=' + variant + '&id=' + id;
+    } else if (variant) {
+      url = url + '?variant=' + variant;
+    } else if (id) {
+      url = url + '?id=' + id;
+    }
+    $.ajax(url, $.extend({}, { data: data, contentType: 'application/json', method: 'PUT' }))
+      .done(function(result) {
+        id = result.id;
+        $('#exploreid').val(id);
+        finalResult(id, variant, result);
+      });
   });
   function finalResult(validForId, validForVariant, data) {
     if (validForId != id || validForVariant != variant) {
@@ -25,12 +46,13 @@ function data(window, $) {
     $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
     $('#exploreresult pre code').each(function(i, e) { hljs.highlightBlock(e); });
     $('#explorefound').css('display', 'block');
+    $('#editsave').css('display', 'none');
     var url = document.location.href;
     if (url.indexOf('#') != -1) {
       url = url.substring(0, url.indexOf('#'));
     }
     url = url + '#id=' + validForId;
-    if (variant) {
+    if (validForVariant) {
       url = url + '&variant=' + validForVariant;
     }
     document.location = url;
@@ -40,6 +62,9 @@ function data(window, $) {
       return;
     }
     $('#explorefound').css('display', 'none');
+    if (validForId == '') {
+      return;
+    }
     var findUrl = base + validForId;
     if (validForVariant != '') {
       findUrl = findUrl + '?variant=' + validForVariant;
