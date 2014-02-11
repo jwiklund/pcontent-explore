@@ -1,12 +1,12 @@
 package pca.explore.dataapi;
 
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -22,10 +22,10 @@ import com.sun.jersey.api.client.WebResource;
 public class Data {
 
     @GET
-    @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public String get(@Context WebResource dataapi, @Context SecurityToken token, @PathParam("id") String id, @QueryParam("variant") String variant)
+    public String get(@Context WebResource dataapi, @Context SecurityToken token,
+            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspectName") String aspectName)
     {
         WebResource request;
         if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
@@ -35,30 +35,39 @@ public class Data {
         } else {
             request = dataapi.path("content/externalid/" + id);
         }
-        request = request.queryParam("format", "json+pretty");
-        if (variant != null) {
-            request = request.queryParam("variant", variant);
-        }
-        return request
+        request = addParams(request, variant, aspectName);
+        ClientResponse resp = request
                 .header("X-Auth-Token", token.token)
-                .get(ClientResponse.class)
-                .getEntity(String.class);
+                .get(ClientResponse.class);
+        String msg = resp.getEntity(String.class);
+        if ("text/html;charset=utf-8".equals(resp.getHeaders().getFirst("Content-Type"))) {
+            Logger.getLogger("DataApi").warning("Request failed " + request.getURI());
+            int index = msg.indexOf("<pre>");
+            if (index != -1) {
+                msg = msg.substring(index + 5);
+            }
+            index = msg.indexOf("</pre>");
+            if (index != -1) {
+                msg = msg.substring(0, index);
+            }
+            Logger.getLogger("DataApi").warning(msg);
+            return "{\"statusCode\": \"50000\", \"message\":\"Data API internal error, see log\"}";
+        }
+        return msg;
     }
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public String put(@Context WebResource dataapi, @Context SecurityToken token, @QueryParam("id") String id, @QueryParam("variant") String variant, InputStream input)
+    public String put(@Context WebResource dataapi, @Context SecurityToken token, InputStream input,
+            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspectName") String aspectName)
     {
         if (id == null || id.trim().isEmpty()) {
-            WebResource request = dataapi.path("content").queryParam("format", "json");
-            if (variant != null && !variant.isEmpty()) {
-                request = request.queryParam("variant", variant);
-            }
-            return respond(dataapi, token, variant, request
-                           .header("X-Auth-Token", token.token)
-                           .header("Content-Type", "application/json")
-                           .post(ClientResponse.class, input));
+            return respond(dataapi, token, variant, aspectName, 
+                    addParams(dataapi.path("content"), variant, aspectName)
+                        .header("X-Auth-Token", token.token)
+                        .header("Content-Type", "application/json")
+                        .post(ClientResponse.class, input));
         } else {
             WebResource request;
             if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
@@ -68,7 +77,7 @@ public class Data {
             } else {
                 request = dataapi.path("content/externalid/" + id);
             }
-            ClientResponse etag = request
+            ClientResponse etag = addParams(request, variant, aspectName)
                     .queryParam("format", "json")
                     .header("X-Auth-Token", token.token)
                     .get(ClientResponse.class);
@@ -78,26 +87,35 @@ public class Data {
             JsonObject etagdata = parse(etag.getEntity(String.class));
             String actualid = etagdata.getAsJsonPrimitive("id").getAsString();
             WebResource update = dataapi.path("content/contentid/" + actualid).queryParam("format", "json");
-            if (variant != null && !variant.isEmpty()) {
-                update = update.queryParam("variant", variant);
-            }
-            return respond(dataapi, token, variant, update
-                           .header("X-Auth-Token", token.token)
-                           .header("If-Match", etag.getHeaders().getFirst("ETag"))
-                           .header("Content-Type", "application/json")
-                           .put(ClientResponse.class, input));
+            return respond(dataapi, token, variant, aspectName,
+                    addParams(update, variant, aspectName)
+                        .header("X-Auth-Token", token.token)
+                        .header("If-Match", etag.getHeaders().getFirst("ETag"))
+                        .header("Content-Type", "application/json")
+                        .put(ClientResponse.class, input));
         }
+    }
+
+    private WebResource addParams(WebResource request, String variant,
+            String aspectName) {
+        if (variant != null) {
+            request = request.queryParam("variant", variant);
+        }
+        if (aspectName != null) {
+            request = request.queryParam("aspectName", aspectName);
+        }
+        return request;
     }
 
     private JsonObject parse(String content) {
         return new GsonBuilder().create().fromJson(content, JsonElement.class).getAsJsonObject();
     }
 
-    private String respond(WebResource dataapi, SecurityToken token, String variant, ClientResponse response) {
+    private String respond(WebResource dataapi, SecurityToken token, String variant, String aspect, ClientResponse response) {
         if (response.getStatus() != 200 && response.getStatus() != 201) {
             return response.getEntity(String.class);
         }
         String id = parse(response.getEntity(String.class)).getAsJsonPrimitive("id").getAsString();
-        return get(dataapi, token, id, variant);
+        return get(dataapi, token, id, variant, aspect);
     }
 }

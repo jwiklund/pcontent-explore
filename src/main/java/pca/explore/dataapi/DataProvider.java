@@ -38,7 +38,7 @@ public class DataProvider extends PerRequestTypeInjectableProvider<Context, WebR
                 if (port == -1) {
                     throw new RuntimeException("No data api available");
                 }
-                return Client.create().resource("http://localhost:" + port + "/content-hub/ws");
+                return Client.create().resource("http://localhost:" + port + "/content-hub/ws").queryParam("format", "json+pretty");
             }
         };
     }
