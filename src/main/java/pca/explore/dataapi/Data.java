@@ -22,8 +22,10 @@ public class Data {
     public String get(@Context WebResource dataapi, @PathParam("id") String id, @QueryParam("token") String token, @QueryParam("variant") String variant)
     {
         WebResource request;
-        if (id.matches("\\d+\\.\\d+(\\.\\d+)?")) {
+        if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
             request = dataapi.path("content/contentid/" + id);
+        } else if (id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+            request = dataapi.path("content/contentid/couch." + id);
         } else {
             request = dataapi.path("content/externalid/" + id);
         }
