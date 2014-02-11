@@ -106,7 +106,7 @@ var explore = function(window, $) {
       return;
     }
     $('#explorefound').css('display', 'none');
-    var searchUrl = base + 'search/ids?key=' + searchFor + '&key=HangerId::' + searchFor + '&key=HangerVersion' + searchFor + '&AspectVersion::' + searchFor;
+    var searchUrl = base + 'search/ids?key=' + searchFor + '&key=HangerId::' + searchFor + '&key=HangerVersion::' + searchFor + '&key=AspectVersion::' + searchFor;
     $.ajax(searchUrl, settings)
       .done(function(found) {
         if (searchFor != id) {
