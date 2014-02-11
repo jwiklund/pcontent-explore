@@ -19,7 +19,7 @@ public class Data {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public String get(@Context WebResource dataapi, @PathParam("id") String id, @QueryParam("token") String token, @QueryParam("variant") String variant)
+    public String get(@Context WebResource dataapi, @Context SecurityToken token, @PathParam("id") String id, @QueryParam("variant") String variant)
     {
         WebResource request;
         if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
@@ -34,7 +34,7 @@ public class Data {
             request = request.queryParam("variant", variant);
         }
         return request
-                .header("X-Security-Token", token)
+                .header("X-Auth-Token", token.token)
                 .get(ClientResponse.class)
                 .getEntity(String.class);
     }
