@@ -27,9 +27,9 @@ public class SecurityTokenProvider extends PerRequestTypeInjectableProvider<Cont
             private long created;
             @Override
             public SecurityToken getValue() {
-                if (token == null || TimeUnit.HOURS.convert(created - System.nanoTime(), TimeUnit.NANOSECONDS) > 0) {
+                if (token == null || Math.abs(TimeUnit.HOURS.convert(System.nanoTime() - created, TimeUnit.NANOSECONDS)) > 0) {
                     synchronized (sync) {
-                        if (token == null || TimeUnit.HOURS.convert(created - System.nanoTime(), TimeUnit.NANOSECONDS) > 0) {
+                        if (token == null || Math.abs(TimeUnit.HOURS.convert(System.nanoTime() - created, TimeUnit.NANOSECONDS)) > 0) {
                             token = login();
                             created = System.nanoTime();
                         }
