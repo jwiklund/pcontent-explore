@@ -27,15 +27,7 @@ public class Data {
     public String get(@Context WebResource dataapi, @Context SecurityToken token,
             @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspectName") String aspectName)
     {
-        WebResource request;
-        if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
-            request = dataapi.path("content/contentid/" + id);
-        } else if (id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
-            request = dataapi.path("content/contentid/couch." + id);
-        } else {
-            request = dataapi.path("content/externalid/" + id);
-        }
-        request = addParams(request, variant, aspectName);
+        WebResource request = addParams(path(dataapi, id), variant, aspectName);
         ClientResponse resp = request
                 .header("X-Auth-Token", token.token)
                 .get(ClientResponse.class);
@@ -69,15 +61,7 @@ public class Data {
                         .header("Content-Type", "application/json")
                         .post(ClientResponse.class, input));
         } else {
-            WebResource request;
-            if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
-                request = dataapi.path("content/contentid/" + id);
-            } else if (id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
-                request = dataapi.path("content/contentid/couch." + id);
-            } else {
-                request = dataapi.path("content/externalid/" + id);
-            }
-            ClientResponse etag = addParams(request, variant, aspectName)
+            ClientResponse etag = addParams(path(dataapi, id), variant, aspectName)
                     .queryParam("format", "json")
                     .header("X-Auth-Token", token.token)
                     .get(ClientResponse.class);
@@ -94,6 +78,18 @@ public class Data {
                         .header("Content-Type", "application/json")
                         .put(ClientResponse.class, input));
         }
+    }
+
+    private WebResource path(WebResource dataapi, String id) {
+        WebResource request;
+        if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
+            request = dataapi.path("content/contentid/" + id);
+        } else if (id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+            request = dataapi.path("content/contentid/couch." + id);
+        } else {
+            request = dataapi.path("content/externalid/" + id);
+        }
+        return request;
     }
 
     private WebResource addParams(WebResource request, String variant,
