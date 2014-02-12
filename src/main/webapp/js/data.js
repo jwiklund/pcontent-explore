@@ -6,8 +6,7 @@ function data(window, $) {
   $('#exploreresult').on('dblclick', 'pre', function(e) {
     var pre = $('#exploreresult pre');
     if (!pre.attr('contenteditable')) {
-      var text = pre.text();
-      var data = JSON.parse(text);
+      var data = JSON.parse(pre.text());
       delete data['id'];
       delete data['version'];
       delete data['meta'];
