@@ -17,9 +17,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
 
 @Path("/")
 public class Data {
+    public final String SEP = ":";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -62,21 +64,37 @@ public class Data {
                         .post(ClientResponse.class, input));
         } else {
             ClientResponse etag = addParams(path(dataapi, id), variant, aspectName)
-                    .queryParam("format", "json")
                     .header("X-Auth-Token", token.token)
                     .get(ClientResponse.class);
-            if (etag.getStatus() != 301 && etag.getStatus() != 200) {
+            String etagValue;
+            String actualid;
+            if (aspectName != null && etag.getStatus() == 404) {
+                etagValue = null;
+                ClientResponse get = addParams(path(dataapi, id), variant, null).header("X-Auth-Token", token.token).get(ClientResponse.class);
+                if (get.getStatus() != 200) {
+                    return get.getEntity(String.class);
+                }
+                JsonObject getdata = parse(get.getEntity(String.class));
+                actualid = getdata.getAsJsonPrimitive("id").getAsString();
+            } else if (etag.getStatus() != 301 && etag.getStatus() != 200) {
                 return etag.getEntity(String.class);
+            } else {
+                etagValue = etag.getHeaders().getFirst("ETag");
+                JsonObject etagdata = parse(etag.getEntity(String.class));
+                actualid = etagdata.getAsJsonPrimitive("id").getAsString();
             }
-            JsonObject etagdata = parse(etag.getEntity(String.class));
-            String actualid = etagdata.getAsJsonPrimitive("id").getAsString();
-            WebResource update = dataapi.path("content/contentid/" + actualid).queryParam("format", "json");
-            return respond(dataapi, token, variant, aspectName,
-                    addParams(update, variant, aspectName)
-                        .header("X-Auth-Token", token.token)
-                        .header("If-Match", etag.getHeaders().getFirst("ETag"))
-                        .header("Content-Type", "application/json")
-                        .put(ClientResponse.class, input));
+            Builder updateRequest = addParams(dataapi.path("content/contentid/" + actualid), variant, aspectName)
+                .header("X-Auth-Token", token.token)
+                .header("Content-Type", "application/json");
+            ClientResponse updateResponse;
+            if (etagValue == null) {
+                updateResponse = updateRequest.post(ClientResponse.class, input);
+            } else {
+                updateResponse = updateRequest
+                        .header("If-Match", etagValue)
+                        .put(ClientResponse.class, input);
+            }
+            return respond(dataapi, token, variant, aspectName, updateResponse);
         }
     }
 
@@ -85,7 +103,9 @@ public class Data {
         if (id.matches("\\d+\\.\\d+(?:\\.\\d+)?")) {
             request = dataapi.path("content/contentid/" + id);
         } else if (id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
-            request = dataapi.path("content/contentid/couch." + id);
+            request = dataapi.path("content/contentid/couch" + SEP + id);
+        } else if (id.matches(".*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+            request = dataapi.path("content/contentid/couch" + id);
         } else {
             request = dataapi.path("content/externalid/" + id);
         }
