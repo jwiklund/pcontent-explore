@@ -1,5 +1,5 @@
 var explore = function(window, $) {
-  var base = 'cb/', id = '', settings = {
+  var base = 'cb/', id = '', dcontent = '', dvariant = '', daspect = '', settings = {
     cache: false,
     dataType: 'json'
   };
@@ -11,6 +11,27 @@ var explore = function(window, $) {
     $('#exploreid').change();
     e.preventDefault();
   });
+  $('#dlink').on('click', function(e) {
+    document.location = constructurl('data.html', '#', id, dcontent, dvariant, daspect);
+    e.preventDefault();
+  });
+  function constructurl(url, quest, id, dcontent, dvariant, daspect) {
+    if (id) {
+      url = url + quest + 'key=' + id;
+      quest = '&';
+    }
+    if (dvariant) {
+      url = url + quest + 'variant=' + dvariant;
+      quest = '&';
+    }
+    if (daspect) {
+      url = url + quest + 'aspect=' + daspect;
+    }
+    if (dcontent) {
+      url = url + quest + 'id=' + dcontent;
+    }
+    return url;
+  }
   $('.createview').on('click', function(e) {
     $.ajax(base + 'view', $.extend({}, {method: 'POST', data: '{"operation":"create"}', contentType: 'application/json' }, settings))
       .done(function() {
@@ -33,7 +54,7 @@ var explore = function(window, $) {
     if (url.indexOf('#') != -1) {
       url = url.substring(0, url.indexOf('#'));
     }
-    document.location = url + '#key=' + validForId;
+    document.location = constructurl(url, '#', validForId, dcontent, dvariant, daspect);
   }
   function expandResult(validForId, dataType, topData, currentData, resultKey, count, resultData) {
     if (validForId != id) {
@@ -155,17 +176,30 @@ var explore = function(window, $) {
     var now = $('#exploreid')
   });
   // check for #key= argument
+  // check for #id= argument
   function hashKey() {
     var hash = document.location.hash;
-    var ind = hash.indexOf('key=');
-    if (ind == -1) {
-      return '';
+    function parseHash(name) {
+      var ind = hash.indexOf(name + '=');
+      if (ind == -1) {
+        return '';
+      }
+      var end = hash.indexOf('&', ind + name.length + 1);
+      if (end == -1) {
+        end = hash.length;
+      }
+      return hash.substring(ind + name.length + 1, end);
     }
-    var end = hash.indexOf('=', ind + 4);
-    if (end == -1) {
-      end = hash.length;
-    }
-    return hash.substring(ind + 4, end);
+    return {
+      id: parseHash('key'),
+      dvariant: parseHash('variant'),
+      daspect: parseHash('aspect'),
+      dcontent: parseHash('id')
+    };
   }
-  $('#exploreid').val(hashKey()).change();
+  var hash = hashKey();
+  dcontent = hash.dcontent;
+  dvariant = hash.dvariant;
+  daspect = hash.daspect;
+  $('#exploreid').val(hash.id).change();
 }

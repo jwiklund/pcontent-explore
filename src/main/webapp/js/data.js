@@ -1,5 +1,5 @@
 function data(window, $) {
-  var base = 'da/', id = '', variant = '', aspect = '', settings = {
+  var base = 'da/', id = '', variant = '', aspect = '', pcontent = '', settings = {
     cache: false,
     dataType: 'json'
   };
@@ -16,10 +16,13 @@ function data(window, $) {
       $('#editsave').css('display', 'block');
     }
   });
-  function constructurl(id, variant, aspect) {
-    var url = base, quest = '?';
+  $('#plink').on('click', function(e) {
+    document.location = constructurl('index.html', '#', id, variant, aspect, pcontent);
+    e.preventDefault();
+  });
+  function constructurl(url, quest, id, variant, aspect, pcontent) {
     if (id) {
-      url = url + '?id=' + id;
+      url = url + quest + 'id=' + id;
       quest = '&';
     }
     if (variant) {
@@ -27,13 +30,16 @@ function data(window, $) {
       quest = '&';
     }
     if (aspect) {
-      url = url + quest + 'aspectName=' + aspect;
+      url = url + quest + 'aspect=' + aspect;
+    }
+    if (pcontent) {
+      url = url + quest + 'key=' + pcontent;
     }
     return url;
   }
   $('#editsave').on('click', function(e) {
     var data = $('#exploreresult pre').text(),
-      url = constructurl(id, variant, aspect);
+      url = constructurl(base, '?', id, variant, aspect);
     $.ajax(url, $.extend({}, { data: data, contentType: 'application/json', method: 'PUT' }))
       .done(function(result) {
         if (result.id) {
@@ -79,7 +85,7 @@ function data(window, $) {
     if (validForId == '') {
       return;
     }
-    var url = constructurl(validForId, validForVariant, validForAspect);
+    var url = constructurl(base, '?', validForId, validForVariant, validForAspect);
     $.ajax(url, settings)
       .done(finalResult.bind(finalResult, validForId, validForVariant, validForAspect));
   }
@@ -113,38 +119,27 @@ function data(window, $) {
   aspectelement.change(changeDetect);
   // check for #id= argument
   function hashKey() {
-    var hash = document.location.hash, result = {
-      id: '',
-      variant: '',
-      aspect: ''
+    var hash = document.location.hash;
+    function parseHash(name) {
+      var ind = hash.indexOf(name + '=');
+      if (ind == -1) {
+        return '';
+      }
+      var end = hash.indexOf('&', ind + name.length + 1);
+      if (end == -1) {
+        end = hash.length;
+      }
+      return hash.substring(ind + name.length + 1, end);
+    }
+    return {
+      id: parseHash('id'),
+      variant: parseHash('variant'),
+      aspect: parseHash('aspect'),
+      pcontent: parseHash('key')
     };
-    var ind = hash.indexOf('id=');
-    if (ind != -1) {
-      var end = hash.indexOf('&', ind + 3);
-      if (end == -1) {
-        end = hash.length;
-      }
-      result.id = hash.substring(ind + 3, end);
-    }
-    ind = hash.indexOf('variant=');
-    if (ind != -1) {
-      var end = hash.indexOf('&', ind + 8);
-      if (end == -1) {
-        end = hash.length;
-      }
-      result.variant = hash.substring(ind + 8, end);
-    }
-    ind = hash.indexOf('aspect=');
-    if (ind != -1) {
-      var end = hash.indexOf('&', ind + 7);
-      if (end == -1) {
-        end = hash.length;
-      }
-      result.aspect = hash.substring(ind + 7, end);
-    }
-    return result;
   }
   var hash = hashKey();
+  pcontent = hash.pcontent;
   variantelement.val(hash.variant);
   aspectelement.val(hash.aspect);
   idelement.val(hash.id);
