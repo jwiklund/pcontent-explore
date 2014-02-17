@@ -27,9 +27,9 @@ public class Data {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public String get(@Context WebResource dataapi, @Context SecurityToken token,
-            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspectName") String aspectName)
+            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspect") String aspect)
     {
-        WebResource request = addParams(path(dataapi, id), variant, aspectName);
+        WebResource request = addParams(path(dataapi, id), variant, aspect);
         ClientResponse resp = request
                 .header("X-Auth-Token", token.token)
                 .get(ClientResponse.class);
@@ -54,23 +54,25 @@ public class Data {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public String put(@Context WebResource dataapi, @Context SecurityToken token, InputStream input,
-            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspectName") String aspectName)
+            @QueryParam("id") String id, @QueryParam("variant") String variant, @QueryParam("aspect") String aspect)
     {
         if (id == null || id.trim().isEmpty()) {
-            return respond(dataapi, token, variant, aspectName, 
-                    addParams(dataapi.path("content"), variant, aspectName)
+            return respond(dataapi, token, variant, aspect,
+                    addParams(dataapi.path("content"), variant, aspect)
                         .header("X-Auth-Token", token.token)
                         .header("Content-Type", "application/json")
                         .post(ClientResponse.class, input));
         } else {
-            ClientResponse etag = addParams(path(dataapi, id), variant, aspectName)
+            ClientResponse etag = addParams(path(dataapi, id), variant, aspect)
                     .header("X-Auth-Token", token.token)
                     .get(ClientResponse.class);
             String etagValue;
             String actualid;
-            if (aspectName != null && etag.getStatus() == 404) {
+            if (aspect != null && etag.getStatus() == 404) {
                 etagValue = null;
-                ClientResponse get = addParams(path(dataapi, id), variant, null).header("X-Auth-Token", token.token).get(ClientResponse.class);
+                ClientResponse get = addParams(path(dataapi, id), variant, null)
+                        .header("X-Auth-Token", token.token)
+                        .get(ClientResponse.class);
                 if (get.getStatus() != 200) {
                     return get.getEntity(String.class);
                 }
@@ -83,9 +85,9 @@ public class Data {
                 JsonObject etagdata = parse(etag.getEntity(String.class));
                 actualid = etagdata.getAsJsonPrimitive("id").getAsString();
             }
-            Builder updateRequest = addParams(dataapi.path("content/contentid/" + actualid), variant, aspectName)
-                .header("X-Auth-Token", token.token)
-                .header("Content-Type", "application/json");
+            Builder updateRequest = addParams(dataapi.path("content/contentid/" + actualid), variant, aspect)
+                    .header("X-Auth-Token", token.token)
+                    .header("Content-Type", "application/json");
             ClientResponse updateResponse;
             if (etagValue == null) {
                 updateResponse = updateRequest.post(ClientResponse.class, input);
@@ -94,7 +96,7 @@ public class Data {
                         .header("If-Match", etagValue)
                         .put(ClientResponse.class, input);
             }
-            return respond(dataapi, token, variant, aspectName, updateResponse);
+            return respond(dataapi, token, variant, aspect, updateResponse);
         }
     }
 
@@ -118,7 +120,7 @@ public class Data {
             request = request.queryParam("variant", variant);
         }
         if (aspectName != null) {
-            request = request.queryParam("aspectName", aspectName);
+            request = request.queryParam("aspect", aspectName);
         }
         return request;
     }
