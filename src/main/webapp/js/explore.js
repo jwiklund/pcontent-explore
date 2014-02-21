@@ -1,15 +1,8 @@
 function explore(window, $, hljs) {
     'use strict';
-    var base = 'cb/', id = '', dcontent = '', dvariant = '', daspect = '', idelement, hash,
-        settings = { cache: false, dataType: 'json' };
-    $('#exploreresult').on('click', '.link', function (e) {
-        if (e.ctrlKey) {
-            return;
-        }
-        $('#exploreid').val($(e.target).text());
-        $('#exploreid').change();
-        e.preventDefault();
-    });
+    var base = 'cb/', id = '', dcontent = '', dvariant = '', daspect = '',
+        idelement = $('#exploreid'), exploreid = $('#exploreid'), exploreresult = $('#exploreresult'), explorefound = $('#explorefound'),
+        explorelist = $('#explorelist'), hash, settings = { cache: false, dataType: 'json' };
     function constructurl(url, quest, id, dcontent, dvariant, daspect) {
         if (id) {
             url = url + quest + 'key=' + id;
@@ -27,27 +20,13 @@ function explore(window, $, hljs) {
         }
         return url;
     }
-    $('#dlink').on('click', function (e) {
-        window.document.location = constructurl('data.html', '#', id, dcontent, dvariant, daspect);
-        e.preventDefault();
-    });
-    $('.createview').on('click', function (e) {
-        $.ajax(base + 'view', $.extend({}, {method: 'POST', data: '{"operation":"create"}', contentType: 'application/json' }, settings))
-            .done(function () {
-                $('#explorelist').css('display', 'none');
-            })
-            .fail(function () {
-                window.console.log('Create ids view failed');
-            });
-        e.preventDefault();
-    });
     function finalResult(validForId, data) {
         if (validForId !== id) {
             return;
         }
-        $('#explorefound').css('display', 'block');
-        $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
-        $('#exploreresult pre code').each(function (i, e) { hljs.highlightBlock(e); });
+        explorefound.css('display', 'block');
+        exploreresult.html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+        exploreresult.find('pre code').each(function (i, e) { hljs.highlightBlock(e); });
         var url = window.document.location.href;
         if (url.indexOf('#') !== -1) {
             url = url.substring(0, url.indexOf('#'));
@@ -134,7 +113,7 @@ function explore(window, $, hljs) {
         if (searchFor !== id) {
             return;
         }
-        $('#explorefound').css('display', 'none');
+        explorefound.css('display', 'none');
         var searchUrl = base + 'search/ids?key=' + searchFor + '&key=HangerId::' + searchFor + '&key=HangerVersion::' + searchFor + '&key=AspectVersion::' + searchFor;
         $.ajax(searchUrl, settings)
             .done(function (found) {
@@ -142,22 +121,22 @@ function explore(window, $, hljs) {
                     return;
                 }
                 if (found.length === 1) {
-                    $('#exploreid').val(found[0]);
-                    $('#exploreid').change();
+                    exploreid.val(found[0]);
+                    exploreid.change();
                 } else if (found.length > 0) {
-                    $('#exploreresult').css('display', 'block');
-                    $('#exploreresult').html('<ul>' + found.map(function (id) { return '<li><a href="#key=' + id + '" class="link">' + id + '</a></li>'; }).join('\n') + '</ul>');
+                    exploreresult.css('display', 'block');
+                    exploreresult.html('<ul>' + found.map(function (id) { return '<li><a href="#key=' + id + '" class="link">' + id + '</a></li>'; }).join('\n') + '</ul>');
                 }
             })
             .fail(function () {
-                $('#explorelist').css('display', 'block');
+                explorelist.css('display', 'block');
             });
     }
     function updateSearch(searchFor) {
         if (searchFor !== id) {
             return;
         }
-        $('#explorefound').css('display', 'none');
+        explorefound.css('display', 'none');
         var findUrl = base + searchFor;
         $.ajax(findUrl, settings)
             .done(expandResult.bind(expandResult, searchFor, null, null, null, null, null))
@@ -170,12 +149,6 @@ function explore(window, $, hljs) {
             updateSearch(id);
         }
     }
-    idelement = $('#exploreid');
-    idelement.keyup(changeDetect);
-    idelement.change(changeDetect);
-    $('#exploreid').keydown(function () {
-        var now = $('#exploreid');
-    });
     function hashKey() {
         var hash = window.document.location.hash;
         function parseHash(name) {
@@ -196,9 +169,33 @@ function explore(window, $, hljs) {
             dcontent: parseHash('id')
         };
     }
+    exploreresult.on('click', '.link', function (e) {
+        if (e.ctrlKey) {
+            return;
+        }
+        exploreid.val($(e.target).text());
+        exploreid.change();
+        e.preventDefault();
+    });
+    $('#dlink').on('click', function (e) {
+        window.document.location = constructurl('data.html', '#', id, dcontent, dvariant, daspect);
+        e.preventDefault();
+    });
+    $('.createview').on('click', function (e) {
+        $.ajax(base + 'view', $.extend({}, {method: 'POST', data: '{"operation":"create"}', contentType: 'application/json' }, settings))
+            .done(function () {
+                $('#explorelist').css('display', 'none');
+            })
+            .fail(function () {
+                window.console.log('Create ids view failed');
+            });
+        e.preventDefault();
+    });
+    idelement.keyup(changeDetect);
+    idelement.change(changeDetect);
     hash = hashKey();
     dcontent = hash.dcontent;
     dvariant = hash.dvariant;
     daspect = hash.daspect;
-    $('#exploreid').val(hash.id).change();
+    exploreid.val(hash.id).change();
 }

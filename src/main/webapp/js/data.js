@@ -2,7 +2,8 @@ function data(window, $, hljs) {
     "use strict";
     var base = 'da/', id = '', variant = '', aspect = '', pcontent = '',
         idelement = $('#exploreid'), variantelement = $('#explorevariant'), aspectelement = $('#exploreaspect'),
-        hash, settings = { cache: false, dataType: 'json' };
+        explorefound = $('#explorefound'), exploreerror = $('#exploreerror'), exploreresult = $('#exploreresult'),
+        editsave = $('#editsave'), hash, settings = { cache: false, dataType: 'json' };
     function constructurl(url, quest, id, variant, aspect, pcontent) {
         if (id) {
             url = url + quest + 'id=' + id;
@@ -25,16 +26,16 @@ function data(window, $, hljs) {
             return;
         }
         if (data.statusCode) {
-            $('#exploreerror').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
-            $('#exploreerror pre code').each(function (i, e) { hljs.highlightBlock(e); });
-            $('#exploreerror').css('display', 'block');
+            exploreerror.html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+            exploreerror.find('pre code').each(function (i, e) { hljs.highlightBlock(e); });
+            exploreerror.css('display', 'block');
             return;
         }
-        $('#exploreerror').css('display', 'none');
-        $('#exploreresult').html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
-        $('#exploreresult pre code').each(function (i, e) { hljs.highlightBlock(e); });
-        $('#explorefound').css('display', 'block');
-        $('#editsave').css('display', 'none');
+        exploreerror.css('display', 'none');
+        exploreresult.html('<pre><code>' + JSON.stringify(data, null, "  ") + '</code></pre>');
+        exploreresult.find('pre code').each(function (i, e) { hljs.highlightBlock(e); });
+        explorefound.css('display', 'block');
+        editsave.css('display', 'none');
         var url = window.document.location.href;
         if (url.indexOf('#') !== -1) {
             url = url.substring(0, url.indexOf('#'));
@@ -52,7 +53,7 @@ function data(window, $, hljs) {
         if (validForId !== id || validForVariant !== variant || validForAspect !== aspect) {
             return;
         }
-        $('#explorefound').css('display', 'none');
+        explorefound.css('display', 'none');
         if (validForId === '') {
             return;
         }
@@ -98,7 +99,7 @@ function data(window, $, hljs) {
             pcontent: parseHash('key')
         };
     }
-    $('#exploreresult').on('dblclick', 'pre', function (e) {
+    exploreresult.on('dblclick', 'pre', function (e) {
         var pre = $('#exploreresult pre'), data;
         if (!pre.attr('contenteditable')) {
             data = JSON.parse(pre.text());
@@ -115,7 +116,7 @@ function data(window, $, hljs) {
         window.document.location = constructurl('index.html', '#', id, variant, aspect, pcontent);
         e.preventDefault();
     });
-    $('#editsave').on('click', function (e) {
+    editsave.on('click', function (e) {
         var data = $('#exploreresult pre').text(),
             url = constructurl(base, '?', id, variant, aspect);
         $.ajax(url, $.extend({}, { data: data, contentType: 'application/json', method: 'PUT' }))
